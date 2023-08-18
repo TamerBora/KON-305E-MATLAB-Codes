@@ -1,0 +1,97 @@
+function  [y,t]=step_response(Gs,method)
+
+        format long
+        [num,den] = tfdata(Gs, 'v');
+        [A,B,C,D] = tf2ss(num,den); %state space matrices
+        h = 0.1; 
+        u=1;
+        order = length(A);
+        
+        %% default
+        % default implementation goes here
+        [yDef,tDef] = step(Gs);
+        
+        %% midpoint
+        x_mid_Values = [];
+        index = 1;
+        yMid = [];
+        x_values =zeros(order,1);
+        for t=0:h:5                
+            x_mid_Values = x_values +h/2 *(A*x_values+B*u);
+            x_values = x_values+ h* (A*x_mid_Values+B*u);
+            yMid(index) = C*x_values+D;
+            index = index+1;
+                   
+        end
+        
+
+
+        %% heun
+        index = 1;
+        yHeun = [];
+        predictor_x =zeros(order,1);
+        corrector_x = zeros(order,1);
+        for t=0:h:5                
+            predictor_x = corrector_x+ h*(A*corrector_x+B*u);
+            corrector_x = corrector_x+ (h/2) * ((A*(corrector_x)+B*u)+(A*(predictor_x)+ B*u));
+            yHeun(index) = C*corrector_x+D;
+            index = index+1;
+                   
+        end
+        
+
+        %% rkutta4
+        index = 1;
+        yRunge=[];
+        rungeVals = zeros(order,1);
+        K1List= zeros(order,1);
+        K2List = zeros(order,1);
+        K3List = zeros(order,1);
+        K4List = zeros(order,1);
+        
+        for t=0:h:5                
+            K1list = A*rungeVals+B*u;
+            K2List = A*(rungeVals+h/2*K1list)+B*u;
+            K3List = A*(rungeVals+h/2*K2List)+B*u;
+            K4List = A*(rungeVals+h*K3List)+ B*u;
+            rungeVals = rungeVals+h/6*(K1List+K2List*2+K3List*2+K4List);
+            yRunge(index) = C*rungeVals+D;
+            index = index+1;
+        end
+        %plotting
+        t = 0:h:5;
+        hold on
+        plot(tDef,yDef,"k",LineWidth=2); % default method
+        plot(t,yMid,"r",LineWidth=2); %midpoint method
+        plot(t,yHeun,"b",LineWidth=2); % Heun Method
+        plot(t,yRunge,"m",LineWidth=2); %Runge Kutta Method
+        legend("Default","Midpoint","Heun","Runge Kutta 4");
+
+        hold off
+        % return of the result for given method method
+        switch(method)
+            case "default"
+                t =tDef;
+                y=yDef;
+            case "midpoint"
+                t = t;
+                y = yMid;
+            case  "heun"
+                t=t;
+                y= yHeun;
+            case "rkutta4"
+                t=t;
+                y=yRunge;
+        end
+end
+
+%% Which method performs the best and why?
+% According to the numerical calculations and plotting of graphs, we
+% understand that runge kutta performed superior compared to other
+% numerical methods such as Heun Method and Midpoint Method. We can also
+% visualize that Heun Method and Midpoint Method performed similar in terms
+% of their performance. For the transfer function in main.m given in Ninova
+% page, heun method and midpoint actually performed identical, so i had to
+% increase the linewidth in order to make sure that both of the plots were
+% plotted successfully to figure. The reason why Runge Kutta performed best
+% is, that it performs higher order iteration compared to others.
