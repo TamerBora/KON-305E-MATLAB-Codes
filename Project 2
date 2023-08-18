@@ -1,0 +1,33 @@
+function  info=rlocus_info(Gs)
+        % convert Gs into a symbolic expression
+        format long
+        syms s K wsym;
+        assume([wsym K],'real');
+        [num,den]=tfdata(Gs);
+        numSym = poly2sym(cell2mat(num),s);
+        denSym = poly2sym(cell2mat(den),s);
+        % calculate real axis breaking points
+        bpoints=0;
+        numSymDif = diff(numSym, s);
+        denSymDif = diff(denSym, s);
+        breakawayEquation = (numSym * denSymDif) - (numSymDif * denSym);
+        bpoints = vpa(solve(breakawayEquation, s));
+        bpoints = bpoints(bpoints==real(bpoints));
+
+
+
+            
+        % calculate jw-crossings
+        k=[];
+        w=[];
+        GsSym = numSym/denSym;
+        charEq = 1+(K*GsSym);
+        JWEq = subs(charEq,s,1j*wsym);
+        w = vpa(solve(imag(JWEq)==0, wsym));
+        k = vpa(solve(subs(real(JWEq),wsym,w)==0,K));
+
+     
+
+
+        info=struct("bpoints",bpoints,"k",k,"w",w); %% DO NOT CHANGE THIS struct and the variable names
+end
